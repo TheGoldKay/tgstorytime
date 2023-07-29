@@ -9,6 +9,24 @@ page = 0
 i = 0
 done = False 
 
+def get_story_content(link):
+    ch = 41
+    url = link + "&textsize=0&chapter="
+    text = []
+    done = False 
+    while (not done):
+        res = requests.get(url + str(ch))
+        html = res.content 
+        soup = bs(html, 'html.parser')
+        txt = soup.find('div', id='story').get_text()
+        if(txt == ''):
+            done = True 
+        else:
+            text.append(txt)
+            ch += 1
+    return text 
+    
+
 def get_story_data(page_stories):
     # some data processing
     for story_div in page_stories:
@@ -20,8 +38,8 @@ def get_story_data(page_stories):
         if(title_link.startswith('javascript')):
             url_pattern = r"location = '([^']+)'"
             title_link = re.search(url_pattern, title_link).group(1)
-        title_link = "www.tgstorytime.com/" + title_link
-        author_link = "www.tgstorytime.com/" + author_link
+        title_link = "https://www.tgstorytime.com/" + title_link
+        author_link = "https://www.tgstorytime.com/" + author_link
         data = {
             "title": title.get_text(),
             "author": author.get_text(),
@@ -29,13 +47,14 @@ def get_story_data(page_stories):
             "story_link": title_link,
             "author_link": author_link
         }
+        data["text"] = get_story_content(title_link)
         stories.append(data)
         #print(f"Title: {title.get_text()}\nAuthor: {author.get_text()}\nSummary: {summary.get_text()}")
         #print(f"Story URL: {title_link} || Author URL Page: {author_link}")
+        break # do the first story <<< FOR TESTING ONLY >>>
         
 while(not done):
     try:
-        #url = tg + str(page)
         url = tg.format(page)
         response = requests.get(url)
         if response.status_code == 200:
@@ -53,11 +72,11 @@ while(not done):
             i += 1
             page += 127
             print(f"Pages scraped: {i}")
-        done = True # do the first page <<< FOR TESTING ONLY >>>
         get_story_data(page_stories)
+        done = True # do the first page <<< FOR TESTING ONLY >>>
     except Exception as e:
         print(f"Error: {e}")
         exit()
 
-print(f"Number of stories: {len(stories)} || Pages: {i}\n")
-print(stories[-1])
+#print(f"Number of stories: {len(stories)} || Pages: {i}\n")
+#print(stories[-1])
