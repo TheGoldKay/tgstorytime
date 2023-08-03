@@ -1,24 +1,23 @@
-from bs4 import BeautifulSoup as bs 
+from bs4 import BeautifulSoup
 import requests
 import os
 import re
 
 tg = "https://www.tgstorytime.com/browse.php?type=titles&offset={}"
 stories = []
-page = 0
-i = 0
-done = False 
 
 def get_story_content(link):
-    ch = 41
+    ch = 1
     url = link + "&textsize=0&chapter="
     text = []
     done = False 
     while (not done):
         res = requests.get(url + str(ch))
         html = res.content 
-        soup = bs(html, 'html.parser')
-        txt = soup.find('div', id='story').get_text()
+        soup = BeautifulSoup(html, 'html.parser')
+        story_div = soup.find('div', id='story')
+        txt_with_newlines = story_div.get_text(separator='\n')  # Get text content with newlines
+        txt = txt_with_newlines.replace('\xa0', ' ')  # Replace non-breaking spaces with regular spaces
         if(txt == ''):
             done = True 
         else:
@@ -35,6 +34,7 @@ def get_story_data(page_stories):
         title_author = story.find_all('a') # there are two links, one for the story and one for the author page
         title, author = title_author[0], title_author[1]
         title_link, author_link = title.get('href'), author.get('href')
+        # if the story has any warnings js will raise a red flag
         if(title_link.startswith('javascript')):
             url_pattern = r"location = '([^']+)'"
             title_link = re.search(url_pattern, title_link).group(1)
@@ -52,31 +52,54 @@ def get_story_data(page_stories):
         #print(f"Title: {title.get_text()}\nAuthor: {author.get_text()}\nSummary: {summary.get_text()}")
         #print(f"Story URL: {title_link} || Author URL Page: {author_link}")
         break # do the first story <<< FOR TESTING ONLY >>>
-        
-while(not done):
-    try:
-        url = tg.format(page)
-        response = requests.get(url)
-        if response.status_code == 200:
-            html_content = response.content
-        else:
-            print("Error: Unable to fetch the webpage.")
-            exit()
-        soup = bs(html_content, 'html.parser')
-        page_stories = list(soup.find_all('div', class_='listboxtop'))
-        os.system('clear')
-        if(not page_stories):
-            print("It's Done\n")
-            done = True 
-        else:
-            i += 1
-            page += 127
-            print(f"Pages scraped: {i}")
-        get_story_data(page_stories)
-        done = True # do the first page <<< FOR TESTING ONLY >>>
-    except Exception as e:
-        print(f"Error: {e}")
-        exit()
 
+def save_data():
+    try:
+        os.mkdir("data")
+    except FileExistsError:
+        pass 
+    for story in stories:
+        folder = f"data/{story['title']}"
+        try:
+            os.mkdir(folder)
+        except FileExistsError:
+            return # the story is already stored
+        with open(f"{folder}/summary.txt", 'w') as file:
+            file.write(story["summary"])
+        for i, chapter in enumerate(story["text"], 1):
+            with open(f"{folder}/{i}.txt", 'w') as file:
+                file.write(chapter)
+    
+
+def main():
+    done = False 
+    page = 0
+    i = 0
+    while(not done):
+        try:
+            url = tg.format(page)
+            response = requests.get(url)
+            if response.status_code == 200:
+                html_content = response.content
+            else:
+                print("Error: Unable to fetch the webpage.")
+                exit()
+            soup = BeautifulSoup(html_content, 'html.parser')
+            page_stories = list(soup.find_all('div', class_='listboxtop'))
+            os.system('clear')
+            if(not page_stories):
+                print("It's Done\n")
+                done = True 
+            else:
+                i += 1
+                page += 127
+                print(f"Pages scraped: {i}")
+            get_story_data(page_stories)
+            done = True # do the first page <<< FOR TESTING ONLY >>>
+        except Exception as e:
+            print(f"Error: {e}")
+            exit()
+    save_data()
+main()
 #print(f"Number of stories: {len(stories)} || Pages: {i}\n")
 #print(stories[-1])
