@@ -5,6 +5,7 @@ import re
 
 tg = "https://www.tgstorytime.com/browse.php?type=titles&offset={}"
 stories = []
+count = 0
 
 def get_story_content(link):
     ch = 1
@@ -27,6 +28,7 @@ def get_story_content(link):
     
 
 def get_story_data(page_stories):
+    global count
     # some data processing
     for story_div in page_stories:
         story = story_div.find_all('div', class_='title')[1] # there are two instances of the 'title' div class
@@ -47,34 +49,38 @@ def get_story_data(page_stories):
             "story_link": title_link,
             "author_link": author_link
         }
+        count += 1
         data["text"] = get_story_content(title_link)
         stories.append(data)
+        save_story(data)
+        print(f"Story: {data['title']} || Count: {count}")
         #print(f"Title: {title.get_text()}\nAuthor: {author.get_text()}\nSummary: {summary.get_text()}")
         #print(f"Story URL: {title_link} || Author URL Page: {author_link}")
-        break # do the first story <<< FOR TESTING ONLY >>>
+        ###########break # do the first story <<< FOR TESTING ONLY >>>
 
-def save_data():
-    try:
-        os.mkdir("data")
-    except FileExistsError:
-        pass 
-    for story in stories:
-        folder = f"data/{story['title']}"
-        try:
-            os.mkdir(folder)
-        except FileExistsError:
-            return # the story is already stored
-        with open(f"{folder}/summary.txt", 'w') as file:
-            file.write(story["summary"])
-        for i, chapter in enumerate(story["text"], 1):
-            with open(f"{folder}/{i}.txt", 'w') as file:
-                file.write(chapter)
+def save_story(story):
+    folder = f"data/{story['title']}"
+    os.mkdir(folder) # story's directory
+    with open(f"{folder}/summary.txt", 'w') as file:
+        file.write(story["summary"])
+    for i, chapter in enumerate(story["text"], 1):
+        with open(f"{folder}/{i}.txt", 'w') as file:
+            file.write(chapter)
     
-
+def make_data_dir(dir_name="data"):
+    try:
+        os.mkdir(dir_name)
+    except FileExistsError:
+        os.rmdir(dir_name)
+        os.mkdir(dir_name)
+    except OSError as e:
+        print(f"Error: {e}")
+        
 def main():
     done = False 
     page = 0
     i = 0
+    make_data_dir()
     while(not done):
         try:
             url = tg.format(page)
@@ -86,20 +92,19 @@ def main():
                 exit()
             soup = BeautifulSoup(html_content, 'html.parser')
             page_stories = list(soup.find_all('div', class_='listboxtop'))
-            os.system('clear')
+            #os.system('clear')
             if(not page_stories):
                 print("It's Done\n")
                 done = True 
             else:
                 i += 1
                 page += 127
-                print(f"Pages scraped: {i}")
+                #print(f"Pages scraped: {i}")
             get_story_data(page_stories)
-            done = True # do the first page <<< FOR TESTING ONLY >>>
+            #########done = True # do the first page <<< FOR TESTING ONLY >>>
         except Exception as e:
             print(f"Error: {e}")
             exit()
-    save_data()
 main()
 #print(f"Number of stories: {len(stories)} || Pages: {i}\n")
 #print(stories[-1])
