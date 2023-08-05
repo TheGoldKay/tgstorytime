@@ -1,7 +1,20 @@
 from bs4 import BeautifulSoup 
 import requests 
+import os
+import secrets
+import string
+
+# Define the characters to use for the random ID
+allowed_characters = string.ascii_letters + string.digits  # You can add more characters if needed.
 
 site = "https://www.tgstorytime.com/{}"
+
+def get_id():
+    # Set the desired length of the random ID
+    id_length = 5  # You can choose any length you prefer.
+    # Generate a random ID
+    random_id = ''.join(secrets.choice(allowed_characters) for _ in range(id_length))
+    return random_id
 
 def save_data(data):
     url = data['story_link']
@@ -18,7 +31,17 @@ def save_data(data):
             res = requests.get(link)
             if res.status_code == 200:
                 title = href.split('/')[-1]
-                with open(f"data/{str(title)}", 'wb') as file:
+                dir_name = data['title']
+                try:
+                    os.mkdir(f"data/{dir_name}")
+                except Exception as e:
+                    os.mkdir(f"data/{dir_name} ({get_id()})")
+                with open(f"data/{dir_name}/summary.txt", 'w') as file:
+                    file.write(data['summary'])
+                with open(f"data/{dir_name}/url.txt", 'w') as file:
+                    file.write(f"Story Link: {data['story_link']}\n")
+                    file.write(f"Author Link: {data['author_link']}\n")
+                with open(f"data/{dir_name}/{title}", 'wb') as file:
                     file.write(res.content)
                     print(f"----------------> {title}")
             else:
