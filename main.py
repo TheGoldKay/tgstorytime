@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import os
 import re
+from get_novels import save_data
 
 tg = "https://www.tgstorytime.com/browse.php?type=titles&offset={}"
 stories = []
@@ -50,10 +51,11 @@ def get_story_data(page_stories):
             "author_link": author_link
         }
         count += 1
-        data["text"] = get_story_content(title_link)
-        stories.append(data)
-        save_story(data)
-        print(f"Story: {data['title']} || Count: {count}")
+        save_data(data)
+        #data["text"] = get_story_content(title_link)
+        #stories.append(data)
+        #save_story(data)
+        #print(f"Story: {data['title']} || Count: {count}")
         #print(f"Title: {title.get_text()}\nAuthor: {author.get_text()}\nSummary: {summary.get_text()}")
         #print(f"Story URL: {title_link} || Author URL Page: {author_link}")
         ###########break # do the first story <<< FOR TESTING ONLY >>>
@@ -71,7 +73,7 @@ def make_data_dir(dir_name="data"):
     try:
         os.mkdir(dir_name)
     except FileExistsError:
-        os.rmdir(dir_name)
+        os.system("rm -rf data")
         os.mkdir(dir_name)
     except OSError as e:
         print(f"Error: {e}")
