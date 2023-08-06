@@ -80,9 +80,9 @@ def make_data_dir(dir_name="data"):
         
 def main():
     done = False 
-    page = 0
+    page = 4699
     i = 0
-    make_data_dir()
+    #make_data_dir()
     while(not done):
         try:
             url = tg.format(page)
@@ -100,8 +100,8 @@ def main():
                 done = True 
             else:
                 i += 1
-                page += 127
-                #print(f"Pages scraped: {i}")
+                page -= 127
+                print(f"Pages Id: {page}")
             get_story_data(page_stories)
             #########done = True # do the first page <<< FOR TESTING ONLY >>>
         except Exception as e:

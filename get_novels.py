@@ -21,7 +21,7 @@ def save_data(data):
     res = requests.get(url)
     html = res.content 
     soup = BeautifulSoup(html, 'html.parser')
-    content = soup.find_all('a')
+    content = soup.find_all('a', href=True)
     for div in content:
         txt = div.get_text()
         #print(txt)
@@ -31,19 +31,20 @@ def save_data(data):
             res = requests.get(link)
             if res.status_code == 200:
                 title = href.split('/')[-1]
-                dir_name = data['title']
+                dir_name = data['title'].replace('/', '-')
                 try:
                     os.mkdir(f"data/{dir_name}")
-                except Exception as e:
-                    os.mkdir(f"data/{dir_name} ({get_id()})")
-                with open(f"data/{dir_name}/summary.txt", 'w') as file:
-                    file.write(data['summary'])
-                with open(f"data/{dir_name}/url.txt", 'w') as file:
-                    file.write(f"Story Link: {data['story_link']}\n")
-                    file.write(f"Author Link: {data['author_link']}\n")
-                with open(f"data/{dir_name}/{title}", 'wb') as file:
-                    file.write(res.content)
-                    print(f"----------------> {title}")
+                    with open(f"data/{dir_name}/summary.txt", 'w') as file:
+                        file.write(data['summary'])
+                    with open(f"data/{dir_name}/url.txt", 'w') as file:
+                        file.write(f"Story Link: {data['story_link']}\n")
+                        file.write(f"Author Link: {data['author_link']}\n")
+                    with open(f"data/{dir_name}/{title}", 'wb') as file:
+                        file.write(res.content)
+                        #print(f"----------------> {title}")
+                except FileExistsError:
+                    #print("******************** FILE ALREADY EXISTS *****************************")
+                    pass
             else:
                 print(">-------- Failure! -----------<")
                 print(data)
